@@ -43,7 +43,8 @@ Errors are caught deliberately and transformed into a uniform JSON response enve
 | **M3 — API** | 2026-10-17 | `88376f1` |
 | **M4 — UI** | 2026-10-17 | `a4addd1` |
 | **M5 — Deployment** | 2026-10-17 | `b85ef0a` |
-| **M6 — Documentation** | 2026-10-17 | Pending v1.0 commit |
+| **M6 — Documentation** | 2026-10-17 | `49fa617` |
+
 
 ## F. If I had two more days
 1. **Multi-Centre Support (Stretch Item)**: Introduce a `Centre` entity with warehouse-specific price lists and moisture thresholds, allowing regional weighing centres to operate autonomously.
