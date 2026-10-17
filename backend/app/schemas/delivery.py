@@ -1,15 +1,15 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class DeliveryPreviewRequest(BaseModel):
     crop_id: int
-    grade: str = Field(..., min_length=1, max_length=20, example="A")
-    gross_weight_kg: Decimal = Field(..., example=Decimal("1000.00"))
-    moisture: Decimal = Field(..., example=Decimal("17.60"))
-    delivered_on: datetime = Field(..., example="2026-10-15T10:30:00Z")
+    grade: str = Field(..., min_length=1, max_length=20)
+    gross_weight_kg: Decimal = Field(...)
+    moisture: Decimal = Field(...)
+    delivered_on: datetime = Field(...)
 
 
 class DeliveryBreakdown(BaseModel):
@@ -61,6 +61,4 @@ class DeliveryResponse(BaseModel):
     is_credit_debit_note: bool
     note_reason: Optional[str] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

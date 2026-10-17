@@ -17,6 +17,12 @@ from app.domain.rules import (
     calculate_payout_totals,
     validate_delivery_inputs,
 )
+from app.domain.services import (
+    DeliveryService,
+    PayoutService,
+    FarmerLedgerService,
+)
+from app.schemas.delivery import DeliveryCreate, DeliveryPreviewRequest
 from app.domain.errors import (
     MissingPriceListError,
     MoistureExceededError,
@@ -30,7 +36,7 @@ UTC = timezone.utc
 
 
 # ------------------------------------------------------------------------------
-# Rule 1: Effective-dated Price Lookup
+# Rule 1: Effective-dated Price Lookup & Historical Immutability
 # ------------------------------------------------------------------------------
 def test_rule_1_price_lookup_exact_effective_date(db_session, sample_crop, sample_prices):
     """Delivery on the exact effective_from date must pick that price entry."""
@@ -63,6 +69,44 @@ def test_rule_1_missing_price_combination_rejected(db_session, sample_crop, samp
     assert "Maize" in str(exc_info.value)
     assert "A" in str(exc_info.value)
     assert "2026-08-15" in str(exc_info.value)
+
+
+def test_rule_1_adding_backdated_price_entry_does_not_alter_existing_delivery(
+    db_session, sample_farmer, sample_crop, sample_prices
+):
+    """
+    Edge case: Adding a back-dated price entry after deliveries exist.
+    Existing delivery's frozen applied price and amount MUST NOT change!
+    """
+    # Create delivery on Oct 5 with prevailing price of 24.50
+    req = DeliveryCreate(
+        farmer_id=sample_farmer.id,
+        crop_id=sample_crop.id,
+        grade="A",
+        gross_weight_kg=Decimal("1000.00"),
+        moisture=Decimal("14.00"),
+        delivered_on=datetime(2026, 10, 5, 10, 0, tzinfo=UTC),
+    )
+    delivery = DeliveryService.create(db_session, req)
+    assert delivery.applied_price == Decimal("24.50")
+    assert delivery.amount == Decimal("24500.00")
+    original_price_id = delivery.applied_price_list_id
+
+    # Later, add a back-dated price entry effective 2026-10-02 at Rs 30.00
+    new_price = PriceList(
+        crop_id=sample_crop.id,
+        grade="A",
+        price_per_kg=Decimal("30.00"),
+        effective_from=date(2026, 10, 2),
+    )
+    db_session.add(new_price)
+    db_session.commit()
+
+    # Re-fetch delivery: must remain frozen
+    db_session.refresh(delivery)
+    assert delivery.applied_price == Decimal("24.50")
+    assert delivery.amount == Decimal("24500.00")
+    assert delivery.applied_price_list_id == original_price_id
 
 
 # ------------------------------------------------------------------------------
@@ -149,6 +193,16 @@ def test_rule_4_weekly_boundaries_monday_to_sunday():
     assert sun.weekday() == 6
 
 
+def test_rule_4_week_with_zero_deliveries(db_session, sample_farmer):
+    """A week with zero deliveries generates a draft payout with 0 gross and 0 net."""
+    target_date = date(2026, 10, 15)
+    draft = PayoutService.generate_draft(db_session, sample_farmer.id, target_date)
+    assert draft.gross_amount == Decimal("0.00")
+    assert draft.advance_deduction == Decimal("0.00")
+    assert draft.net_amount == Decimal("0.00")
+    assert draft.status == "Draft"
+
+
 # ------------------------------------------------------------------------------
 # Rule 5: Advance Recovery Capped at 30% of Gross Amount
 # ------------------------------------------------------------------------------
@@ -194,6 +248,120 @@ def test_rule_5_sequential_payouts_drain_advance():
     assert net4 == Decimal("9000.00")
     advance -= ded4
     assert advance == Decimal("0.00")
+
+
+def test_rule_5_draft_does_not_reduce_advance_until_finalised(
+    db_session, sample_farmer, sample_crop, sample_prices
+):
+    """
+    CRITICAL: Outstanding advance must NOT be reduced in Draft status.
+    It is reduced ONLY when the payout is Finalised.
+    """
+    initial_advance = sample_farmer.outstanding_advance  # Rs 5,000.00
+
+    # Create delivery of 1000 kg at 24.50 = Rs 24,500.00
+    req = DeliveryCreate(
+        farmer_id=sample_farmer.id,
+        crop_id=sample_crop.id,
+        grade="A",
+        gross_weight_kg=Decimal("1000.00"),
+        moisture=Decimal("14.00"),
+        delivered_on=datetime(2026, 10, 14, 10, 0, tzinfo=UTC),
+    )
+    DeliveryService.create(db_session, req)
+
+    # Generate draft payout
+    draft = PayoutService.generate_draft(db_session, sample_farmer.id, date(2026, 10, 14))
+    assert draft.status == "Draft"
+    # Gross = 24,500. 30% = 7,350. Advance = 5,000. Deduction = 5,000. Net = 19,500.
+    assert draft.gross_amount == Decimal("24500.00")
+    assert draft.advance_deduction == Decimal("5000.00")
+    assert draft.net_amount == Decimal("19500.00")
+
+    # Farmer outstanding advance MUST still be Rs 5,000 in DB
+    db_session.refresh(sample_farmer)
+    assert sample_farmer.outstanding_advance == initial_advance
+
+    # Now finalise the payout
+    finalised = PayoutService.finalise(db_session, draft.id)
+    assert finalised.status == "Finalised"
+
+    # Farmer outstanding advance MUST now be reduced to Rs 0.00
+    db_session.refresh(sample_farmer)
+    assert sample_farmer.outstanding_advance == Decimal("0.00")
+
+
+# ------------------------------------------------------------------------------
+# Rule 6: Finalised Payout Immutability & Credit/Debit Notes
+# ------------------------------------------------------------------------------
+def test_rule_6_finalised_payout_cannot_be_re_finalised_or_drafted(
+    db_session, sample_farmer, sample_crop, sample_prices
+):
+    """A finalised payout is immutable."""
+    req = DeliveryCreate(
+        farmer_id=sample_farmer.id,
+        crop_id=sample_crop.id,
+        grade="A",
+        gross_weight_kg=Decimal("500.00"),
+        moisture=Decimal("14.00"),
+        delivered_on=datetime(2026, 10, 14, 10, 0, tzinfo=UTC),
+    )
+    DeliveryService.create(db_session, req)
+    draft = PayoutService.generate_draft(db_session, sample_farmer.id, date(2026, 10, 14))
+    PayoutService.finalise(db_session, draft.id)
+
+    # Attempting to re-finalise must fail
+    with pytest.raises(ImmutablePayoutError):
+        PayoutService.finalise(db_session, draft.id)
+
+    # Attempting to generate a new draft for the same finalized week must fail
+    with pytest.raises(ImmutablePayoutError):
+        PayoutService.generate_draft(db_session, sample_farmer.id, date(2026, 10, 14))
+
+
+def test_rule_6_credit_debit_note_lands_in_next_payout(
+    db_session, sample_farmer, sample_crop, sample_prices
+):
+    """
+    Corrections to finalised deliveries are made by credit/debit notes
+    that reference the original and land in the next payout.
+    """
+    # Original delivery in week Oct 5 - Oct 11
+    d1 = DeliveryService.create(
+        db_session,
+        DeliveryCreate(
+            farmer_id=sample_farmer.id,
+            crop_id=sample_crop.id,
+            grade="A",
+            gross_weight_kg=Decimal("1000.00"),
+            moisture=Decimal("14.00"),
+            delivered_on=datetime(2026, 10, 6, 10, 0, tzinfo=UTC),
+        ),
+    )
+    payout_w1 = PayoutService.generate_draft(db_session, sample_farmer.id, date(2026, 10, 6))
+    PayoutService.finalise(db_session, payout_w1.id)
+
+    # Submit credit note delivery in next week (Oct 12 - Oct 18)
+    credit_note = DeliveryService.create(
+        db_session,
+        DeliveryCreate(
+            farmer_id=sample_farmer.id,
+            crop_id=sample_crop.id,
+            grade="A",
+            gross_weight_kg=Decimal("50.00"),  # Additional 50 kg credited
+            moisture=Decimal("14.00"),
+            delivered_on=datetime(2026, 10, 13, 10, 0, tzinfo=UTC),
+            reference_delivery_id=d1.id,
+            is_credit_debit_note=True,
+            note_reason="Weighbridge calibration shortfall on delivery #1",
+        ),
+    )
+    assert credit_note.is_credit_debit_note is True
+    assert credit_note.reference_delivery_id == d1.id
+
+    # Next week's payout picks up the credit note
+    payout_w2 = PayoutService.generate_draft(db_session, sample_farmer.id, date(2026, 10, 13))
+    assert payout_w2.gross_amount == credit_note.amount
 
 
 # ------------------------------------------------------------------------------

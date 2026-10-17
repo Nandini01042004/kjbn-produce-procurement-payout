@@ -1,14 +1,14 @@
 from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.delivery import DeliveryResponse
 from app.schemas.advance import AdvanceResponse
 
 
 class PayoutGenerateRequest(BaseModel):
     farmer_id: int
-    for_date: date = Field(..., example="2026-10-15")  # Any date in the target week
+    for_date: date
 
 
 class PayoutResponse(BaseModel):
@@ -23,14 +23,12 @@ class PayoutResponse(BaseModel):
     gross_amount: Decimal
     advance_deduction: Decimal
     net_amount: Decimal
-    status: str  # Draft, Finalised, Paid
+    status: str
     finalised_at: Optional[datetime] = None
     paid_at: Optional[datetime] = None
     created_at: datetime
     deliveries: List[DeliveryResponse] = []
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FarmerLedgerResponse(BaseModel):
@@ -49,3 +47,4 @@ class FarmerLedgerResponse(BaseModel):
     deliveries: List[DeliveryResponse]
     advances: List[AdvanceResponse]
     payouts: List[PayoutResponse]
+    model_config = ConfigDict(from_attributes=True)

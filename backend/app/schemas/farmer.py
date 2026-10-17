@@ -1,14 +1,14 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class FarmerBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100, example="Ramesh Patel")
-    phone: str = Field(..., min_length=10, max_length=15, example="9876543210")
-    village: str = Field(..., min_length=1, max_length=100, example="Hunsur")
-    bank_reference: str = Field(..., min_length=1, max_length=200, example="SBIN0001234-9871234567")
+    name: str = Field(..., min_length=1, max_length=100)
+    phone: str = Field(..., min_length=10, max_length=15)
+    village: str = Field(..., min_length=1, max_length=100)
+    bank_reference: str = Field(..., min_length=1, max_length=200)
 
 
 class FarmerCreate(FarmerBase):
@@ -26,6 +26,5 @@ class FarmerResponse(FarmerBase):
     id: int
     outstanding_advance: Decimal
     created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
