@@ -5,6 +5,7 @@ from datetime import date, datetime, timezone
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 # Ensure backend directory is in python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -19,8 +20,12 @@ TEST_DB_URL = "sqlite:///:memory:"
 
 @pytest.fixture(scope="function")
 def db_session():
-    """Provides a fresh in-memory SQLite database session for each test."""
-    engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
+    """Provides a fresh in-memory SQLite database session for each test using StaticPool."""
+    engine = create_engine(
+        TEST_DB_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = TestingSessionLocal()
@@ -31,6 +36,7 @@ def db_session():
         session.close()
         Base.metadata.drop_all(bind=engine)
         set_global_clock(None)
+
 
 
 @pytest.fixture

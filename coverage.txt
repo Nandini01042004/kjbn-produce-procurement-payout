@@ -1,0 +1,98 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.1.1, pluggy-1.7.0 -- C:\KJBN\backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: c:\KJBN\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-4.1.0
+collecting ... collected 31 items
+
+backend\tests\test_api.py::test_api_health_check PASSED                  [  3%]
+backend\tests\test_api.py::test_api_reviewer_clock_override PASSED       [  6%]
+backend\tests\test_api.py::test_api_create_farmer_and_list PASSED        [  9%]
+backend\tests\test_api.py::test_api_delivery_preview PASSED              [ 12%]
+backend\tests\test_api.py::test_api_delivery_create_and_ledger PASSED    [ 16%]
+backend\tests\test_api.py::test_api_payout_lifecycle PASSED              [ 19%]
+backend\tests\test_api.py::test_api_error_response_shape_on_domain_violation PASSED [ 22%]
+backend\tests\test_api.py::test_api_error_response_shape_on_missing_entity PASSED [ 25%]
+backend\tests\test_api.py::test_api_bad_request_validation_handling PASSED [ 29%]
+backend\tests\test_rules.py::test_rule_1_price_lookup_exact_effective_date PASSED [ 32%]
+backend\tests\test_rules.py::test_rule_1_price_lookup_latest_on_or_before PASSED [ 35%]
+backend\tests\test_rules.py::test_rule_1_price_lookup_prior_to_newer_effective_date PASSED [ 38%]
+backend\tests\test_rules.py::test_rule_1_missing_price_combination_rejected PASSED [ 41%]
+backend\tests\test_rules.py::test_rule_1_adding_backdated_price_entry_does_not_alter_existing_delivery PASSED [ 45%]
+backend\tests\test_rules.py::test_rule_2_moisture_at_or_below_threshold PASSED [ 48%]
+backend\tests\test_rules.py::test_rule_2_moisture_at_14_99_percent PASSED [ 51%]
+backend\tests\test_rules.py::test_rule_2_moisture_at_15_00_percent PASSED [ 54%]
+backend\tests\test_rules.py::test_rule_2_moisture_example_17_6_percent PASSED [ 58%]
+backend\tests\test_rules.py::test_rule_2_moisture_capped_at_10_percent PASSED [ 61%]
+backend\tests\test_rules.py::test_rule_2_moisture_above_crop_max_rejected PASSED [ 64%]
+backend\tests\test_rules.py::test_rule_3_breakdown_arithmetic_and_rounding PASSED [ 67%]
+backend\tests\test_rules.py::test_rule_4_weekly_boundaries_monday_to_sunday PASSED [ 70%]
+backend\tests\test_rules.py::test_rule_4_week_with_zero_deliveries PASSED [ 74%]
+backend\tests\test_rules.py::test_rule_5_advance_deduction_capped_at_30_percent PASSED [ 77%]
+backend\tests\test_rules.py::test_rule_5_sequential_payouts_drain_advance PASSED [ 80%]
+backend\tests\test_rules.py::test_rule_5_draft_does_not_reduce_advance_until_finalised PASSED [ 83%]
+backend\tests\test_rules.py::test_rule_6_finalised_payout_cannot_be_re_finalised_or_drafted PASSED [ 87%]
+backend\tests\test_rules.py::test_rule_6_credit_debit_note_lands_in_next_payout PASSED [ 90%]
+backend\tests\test_rules.py::test_rule_7_invalid_grade_rejected PASSED   [ 93%]
+backend\tests\test_rules.py::test_rule_7_non_positive_values_rejected PASSED [ 96%]
+backend\tests\test_rules.py::test_rule_7_future_delivery_rejected PASSED [100%]
+
+============================== warnings summary ===============================
+backend\.venv\Lib\site-packages\starlette\testclient.py:41
+  C:\KJBN\backend\.venv\Lib\site-packages\starlette\testclient.py:41: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    [], typing.ContextManager[anyio.abc.BlockingPortal]
+
+tests/test_api.py::test_api_health_check
+tests/test_api.py::test_api_reviewer_clock_override
+tests/test_api.py::test_api_create_farmer_and_list
+tests/test_api.py::test_api_delivery_preview
+tests/test_api.py::test_api_delivery_create_and_ledger
+tests/test_api.py::test_api_payout_lifecycle
+tests/test_api.py::test_api_error_response_shape_on_domain_violation
+tests/test_api.py::test_api_error_response_shape_on_missing_entity
+tests/test_api.py::test_api_bad_request_validation_handling
+  C:\KJBN\backend\.venv\Lib\site-packages\httpx\_client.py:680: DeprecationWarning: The 'app' shortcut is now deprecated. Use the explicit style 'transport=WSGITransport(app=...)' instead.
+    warnings.warn(message, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform win32, python 3.12.10-final-0 ----------
+Name                                    Stmts   Miss  Cover
+-----------------------------------------------------------
+backend\app\__init__.py                     1      0   100%
+backend\app\api\middleware.py              56      7    88%
+backend\app\api\routes\__init__.py          0      0   100%
+backend\app\api\routes\advances.py         44     29    34%
+backend\app\api\routes\crops.py            29     15    48%
+backend\app\api\routes\deliveries.py       47     24    49%
+backend\app\api\routes\farmers.py          36      3    92%
+backend\app\api\routes\health.py           20      4    80%
+backend\app\api\routes\payouts.py          42     11    74%
+backend\app\api\routes\price_lists.py      53     39    26%
+backend\app\clock.py                       51      9    82%
+backend\app\config.py                      15      0   100%
+backend\app\database.py                    11      4    64%
+backend\app\domain\__init__.py              0      0   100%
+backend\app\domain\errors.py               38      2    95%
+backend\app\domain\rules.py                59      0   100%
+backend\app\domain\services.py            143     16    89%
+backend\app\main.py                        21      1    95%
+backend\app\models\__init__.py              7      0   100%
+backend\app\models\advance.py              14      0   100%
+backend\app\models\crop.py                 27      3    89%
+backend\app\models\delivery.py             31      0   100%
+backend\app\models\farmer.py               17      0   100%
+backend\app\models\payout.py               20      0   100%
+backend\app\models\price_list.py           15      0   100%
+backend\app\schemas\__init__.py             7      0   100%
+backend\app\schemas\advance.py             18      0   100%
+backend\app\schemas\crop.py                15      0   100%
+backend\app\schemas\delivery.py            54      0   100%
+backend\app\schemas\farmer.py              21      0   100%
+backend\app\schemas\payout.py              44      0   100%
+backend\app\schemas\price_list.py          16      0   100%
+-----------------------------------------------------------
+TOTAL                                     972    167    83%
+
+======================= 31 passed, 10 warnings in 4.47s =======================
