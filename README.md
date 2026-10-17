@@ -245,4 +245,7 @@ Validation failures return HTTP 422 with an array of problematic fields in `deta
 - **Multi-Centre Scoping**: Multi-buying-centre isolation is drafted as a stretch feature; all current transactions belong to a single primary buying centre.
 - **Automated Bank Integration**: Payout disbursement is simulated via the "Mark as Paid" status transition; direct NACH/NEFT bank API integrations are not connected.
 - **Database Engine**: Production defaults to file-persisted SQLite; while PostgreSQL is fully supported by switching `DATABASE_URL`, SQLite was selected for self-contained, zero-setup reproducibility.
+
+## 12. AI and third-party usage
 - A comprehensive log of every prompt and action taken is committed in [PROMPTS.md](file:///c:/KJBN/PROMPTS.md).
+
