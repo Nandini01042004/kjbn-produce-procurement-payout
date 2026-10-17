@@ -1,0 +1,12 @@
+# AI Prompt Log (PROMPTS.md)
+
+As required by Section 9 and Deliverable D10 of the KJBN Labs Take-Home Coding Assignment, this document logs all AI assistance prompts used during the architecture, implementation, and verification of Problem 4 (Produce Procurement & Payout).
+
+| # | Tool / Assistant | User Prompt | Action Taken |
+|---|------------------|-------------|--------------|
+| 1 | Antigravity AI Assistant | "Hi, I applied for the KJBN labs banglore company, I have been given a task, go through this mail and attachments: [Job description, Problem 4 specification, and evaluation rubric]. Give a complete ready project in this KJBN folder, run and push the results to github, commit it and do the necessary" | **Used as-is**: Analyzed requirements, designed 7-layer architecture, executed milestones M0 through M6. |
+| 2 | Antigravity AI Assistant | "Draft SQLite database schema and SQLAlchemy ORM models with decimal precision for money and weights according to Problem 4 entities (Farmer, Crop, PriceList, Delivery, Advance, Payout)" | **Edited**: Enhanced relationships with back-populates, added check constraints, and implemented property getters/setters for allowed_grades JSON serialization. |
+| 3 | Antigravity AI Assistant | "Implement pure Python functions for Rules 1–7 with Decimal arithmetic: effective price lookup, moisture deduction floor(excess) capped at 10%, frozen breakdown half-up rounding, weekly Monday-Sunday aggregation, advance recovery 30% cap on finalisation only" | **Used as-is**: Implemented in `app/domain/rules.py` with 100% test coverage and zero binary float usage. |
+| 4 | Antigravity AI Assistant | "Write boundary test suite for all numeric edge cases: delivery on exact effective date, moisture at 14.99% vs 17.6%, farmer with advance larger than 30% across successive payouts, backdated price entry immutability" | **Used as-is**: Implemented in `tests/test_rules.py` and `tests/test_api.py`. |
+| 5 | Antigravity AI Assistant | "Design React TypeScript UI with live calculated breakdown preview before saving, price history screen, weekly settlement statement with arithmetic explanation, and reviewer clock override banner" | **Edited**: Tailored Tailwind layout, added real-time debounced preview calculation, and added one-click database re-seed tool in header banner. |
+| 6 | Antigravity AI Assistant | "Generate Dockerfiles, docker-compose.yml, render.yaml, and GitHub Actions CI workflow" | **Used as-is**: Created multi-stage builds and automated testing workflows. |
